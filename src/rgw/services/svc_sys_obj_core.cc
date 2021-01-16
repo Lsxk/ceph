@@ -188,6 +188,9 @@ int RGWSI_SysObj_Core::read(RGWSysObjectCtxBase& obj_ctx,
                             rgw_cache_entry_info *cache_info,
                             boost::optional<obj_version>)
 {
+
+    ldout(cct, 0) << "INFO: begin to get " << obj << " user info step 2" << dendl;
+
   uint64_t len;
   librados::ObjectReadOperation op;
 
