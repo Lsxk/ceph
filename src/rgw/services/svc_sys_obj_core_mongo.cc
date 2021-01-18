@@ -5,92 +5,64 @@
 
 #define dout_subsys ceph_subsys_rgw
 
-// TODO
-int RGWSI_SysObj_Core::get_rados_obj(RGWSI_Zone *zone_svc,
-                                     const rgw_raw_obj& obj,
-                                     RGWSI_RADOS::Obj *pobj)
-{
-    if (obj.oid.empty()) {
-        ldout(rados_svc->ctx(), 0) << "ERROR: obj.oid is empty" << dendl;
-        return -EINVAL;
-    }
+/**
+ * stat operator, return obj size and last modify time
+ * The result will be ENOENT if the object doesn't exist.  If it does
+ * exist and no other error occurs the server returns the size and last
+ * modification time of the target object as output data (in little
+ * endian format).  The size is a 64 bit unsigned and the time is
+ * ceph_timespec structure (two unsigned 32-bit integers, representing
+ * a seconds and nanoseconds value).
+ * @param obj
+ * @param psize
+ * @param pmtime
+ * @param epoch
+ * @param attrs
+ * @param first_chunk
+ * @param objv_tracker
+ * @return
+ */
+int RGWSI_SysObj_Core::raw_stat(const rgw_raw_obj &obj, uint64_t *psize, real_time *pmtime, uint64_t *epoch,
+                                map<string, bufferlist> *attrs, bufferlist *first_chunk,
+                                RGWObjVersionTracker *objv_tracker) {
 
-    *pobj = std::move(rados_svc->obj(obj));
-    int r = pobj->open();
-    if (r < 0) {
-        return r;
-    }
-
-    return 0;
-}
-
-// TODO
-int RGWSI_SysObj_Core::get_system_obj_state_impl(RGWSysObjectCtxBase *rctx, const rgw_raw_obj& obj, RGWSysObjState **state, RGWObjVersionTracker *objv_tracker)
-{
-    if (obj.empty()) {
-        return -EINVAL;
-    }
-
-    RGWSysObjState *s = rctx->get_state(obj);
-    ldout(cct, 20) << "get_system_obj_state: rctx=" << (void *)rctx << " obj=" << obj << " state=" << (void *)s << " s->prefetch_data=" << s->prefetch_data << dendl;
-    *state = s;
-    if (s->has_attrs) {
-        return 0;
-    }
-
-    s->obj = obj;
-
-    int r = raw_stat(obj, &s->size, &s->mtime, &s->epoch, &s->attrset, (s->prefetch_data ? &s->data : nullptr), objv_tracker);
-    if (r == -ENOENT) {
-        s->exists = false;
-        s->has_attrs = true;
-        s->mtime = real_time();
-        return 0;
-    }
-    if (r < 0)
-        return r;
-
-    s->exists = true;
-    s->has_attrs = true;
-    s->obj_tag = s->attrset[RGW_ATTR_ID_TAG];
-
-    if (s->obj_tag.length())
-        ldout(cct, 20) << "get_system_obj_state: setting s->obj_tag to "
-                       << s->obj_tag.c_str() << dendl;
-    else
-        ldout(cct, 20) << "get_system_obj_state: s->obj_tag was set empty" << dendl;
-
-    return 0;
-}
-
-int RGWSI_SysObj_Core::write_data(const rgw_raw_obj& obj,
-                                  const bufferlist& bl,
-                                  bool exclusive,
-                                  RGWObjVersionTracker *objv_tracker)
-{
     RGWSI_RADOS::Obj rados_obj;
     int r = get_rados_obj(zone_svc, obj, &rados_obj);
     if (r < 0) {
-        ldout(cct, 20) << "get_rados_obj() on obj=" << obj << " returned " << r << dendl;
         return r;
     }
 
-    librados::ObjectWriteOperation op;
+    uint64_t size = 0;
+    struct timespec mtime_ts;
 
-    if (exclusive) {
-        op.create(true);
-    }
-
+    librados::ObjectReadOperation op;
     if (objv_tracker) {
-        objv_tracker->prepare_op_for_write(&op);
+        objv_tracker->prepare_op_for_read(&op);
     }
-    op.write_full(bl);
-    r = rados_obj.operate(&op, null_yield);
+    op.getxattrs(attrs, nullptr);
+    if (psize || pmtime) {
+
+        // todo read size, modify time
+        op.stat2(&size, &mtime_ts, nullptr);
+    }
+    if (first_chunk) {
+        // todo read first_chunk
+        op.read(0, cct->_conf->rgw_max_chunk_size, first_chunk, nullptr);
+    }
+    bufferlist outbl;
+    r = rados_obj.operate(&op, &outbl, null_yield);
+
+    if (epoch) {
+        *epoch = rados_obj.get_last_version();
+    }
+
     if (r < 0)
         return r;
 
-    if (objv_tracker) {
-        objv_tracker->apply_write();
-    }
+    if (psize)
+        *psize = size;
+    if (pmtime)
+        *pmtime = ceph::real_clock::from_timespec(mtime_ts);
+
     return 0;
 }
