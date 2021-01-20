@@ -254,6 +254,11 @@ if(WITH_RADOSGW_BEAST_FRONTEND AND WITH_RADOSGW_BEAST_OPENSSL)
   target_link_libraries(radosgw_a PRIVATE OpenSSL::SSL)
 endif()
 
+list(APPEND CMAKE_PREFIX_PATH /usr/local/Cellar/mongo-cxx-driver/lib/cmake/mongocxx-3.6.2/)
+list(APPEND CMAKE_PREFIX_PATH /usr/local/Cellar/mongo-cxx-driver/lib/cmake/bsoncxx-3.6.2)
+
+find_package(mongocxx REQUIRED)
+
 add_executable(radosgw rgw_main.cc)
 target_link_libraries(radosgw radosgw_a librados
   cls_rgw_client cls_otp_client cls_lock_client cls_refcount_client
@@ -262,7 +267,7 @@ target_link_libraries(radosgw radosgw_a librados
   global dmclock::dmclock
   ${FCGI_LIBRARY} ${LIB_RESOLV}
   ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES}
-  ${ALLOC_LIBS})
+  ${ALLOC_LIBS} mongo::mongocxx_shared)
 install(TARGETS radosgw DESTINATION bin)
 
 set(radosgw_admin_srcs
