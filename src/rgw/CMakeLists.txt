@@ -140,11 +140,13 @@ endif()
 if(WITH_RADOSGW_KAFKA_ENDPOINT)
   list(APPEND librgw_common_srcs rgw_kafka.cc)
 endif()
-
+find_package(mongocxx REQUIRED)
 add_library(rgw_common OBJECT ${librgw_common_srcs})
 
 target_include_directories(rgw_common SYSTEM PUBLIC "services")
 target_include_directories(rgw_common PUBLIC "${CMAKE_SOURCE_DIR}/src/dmclock/support/src")
+
+target_link_libraries(rgw_common mongo::mongocxx_shared)
 
 if(WITH_LTTNG)
   # rgw/rgw_op.cc includes "tracing/rgw_op.h"
@@ -254,7 +256,6 @@ if(WITH_RADOSGW_BEAST_FRONTEND AND WITH_RADOSGW_BEAST_OPENSSL)
   target_link_libraries(radosgw_a PRIVATE OpenSSL::SSL)
 endif()
 
-find_package(mongocxx REQUIRED)
 
 add_executable(radosgw rgw_main.cc)
 target_link_libraries(radosgw radosgw_a librados
@@ -264,7 +265,7 @@ target_link_libraries(radosgw radosgw_a librados
   global dmclock::dmclock
   ${FCGI_LIBRARY} ${LIB_RESOLV}
   ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES}
-  ${ALLOC_LIBS} mongo::mongocxx_shared)
+  ${ALLOC_LIBS})
 install(TARGETS radosgw DESTINATION bin)
 
 set(radosgw_admin_srcs
