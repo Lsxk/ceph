@@ -122,6 +122,7 @@ set(librgw_common_srcs
   rgw_object_lock.cc
   rgw_rest_iam.cc
   rgw_url.cc)
+find_package(mongocxx REQUIRED)
 
 if(WITH_RADOSGW_AMQP_ENDPOINT)
   find_package(RabbitMQ REQUIRED)
@@ -140,7 +141,7 @@ endif()
 if(WITH_RADOSGW_KAFKA_ENDPOINT)
   list(APPEND librgw_common_srcs rgw_kafka.cc)
 endif()
-find_package(mongocxx REQUIRED)
+
 add_library(rgw_common OBJECT ${librgw_common_srcs})
 
 target_include_directories(rgw_common SYSTEM PUBLIC "services")
@@ -208,7 +209,7 @@ target_link_libraries(rgw_a
   ${CURL_LIBRARIES}
   ${EXPAT_LIBRARIES}
   ${OPENLDAP_LIBRARIES} ${CRYPTO_LIBS}
-  OATH::OATH)
+  OATH::OATH mongo::mongocxx_shared)
 
 if(WITH_CURL_OPENSSL)
   # used by rgw_http_client_curl.cc
@@ -250,7 +251,7 @@ endif()
 
 add_library(radosgw_a STATIC ${radosgw_srcs}
   $<TARGET_OBJECTS:civetweb_common_objs>)
-target_link_libraries(radosgw_a PRIVATE ${rgw_libs})
+target_link_libraries(radosgw_a PRIVATE ${rgw_libs} mongo::mongocxx_shared)
 if(WITH_RADOSGW_BEAST_FRONTEND AND WITH_RADOSGW_BEAST_OPENSSL)
   # used by rgw_asio_frontend.cc
   target_link_libraries(radosgw_a PRIVATE OpenSSL::SSL)
@@ -265,7 +266,7 @@ target_link_libraries(radosgw radosgw_a librados
   global dmclock::dmclock
   ${FCGI_LIBRARY} ${LIB_RESOLV}
   ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES}
-  ${ALLOC_LIBS})
+  ${ALLOC_LIBS} mongo::mongocxx_shared)
 install(TARGETS radosgw DESTINATION bin)
 
 set(radosgw_admin_srcs
@@ -277,7 +278,7 @@ target_link_libraries(radosgw-admin ${rgw_libs} librados
   cls_log_client cls_timeindex_client
   cls_version_client cls_user_client
   global ${FCGI_LIBRARY} ${LIB_RESOLV}
-  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES})
+  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES} mongo::mongocxx_shared)
 install(TARGETS radosgw-admin DESTINATION bin)
 
 set(radosgw_es_srcs
@@ -288,14 +289,14 @@ target_link_libraries(radosgw-es ${rgw_libs} librados
   cls_log_client cls_timeindex_client
   cls_version_client cls_user_client
   global ${FCGI_LIBRARY} ${LIB_RESOLV}
-  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES})
+  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} ${BLKID_LIBRARIES} mongo::mongocxx_shared)
 install(TARGETS radosgw-es DESTINATION bin)
 
 set(radosgw_token_srcs
   rgw_token.cc)
 add_executable(radosgw-token ${radosgw_token_srcs})
 target_link_libraries(radosgw-token librados
-  global ${ALLOC_LIBS})
+  global ${ALLOC_LIBS} mongo::mongocxx_shared)
 install(TARGETS radosgw-token DESTINATION bin)
 
 set(radosgw_object_expirer_srcs
@@ -306,7 +307,7 @@ target_link_libraries(radosgw-object-expirer ${rgw_libs} librados
   cls_log_client cls_timeindex_client
   cls_version_client cls_user_client
   global ${FCGI_LIBRARY} ${LIB_RESOLV}
-  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES})
+  ${CURL_LIBRARIES} ${EXPAT_LIBRARIES} mongo::mongocxx_shared)
 install(TARGETS radosgw-object-expirer DESTINATION bin)
 
 set(librgw_srcs
@@ -330,7 +331,7 @@ target_link_libraries(rgw
   ${CURL_LIBRARIES}
   ${EXPAT_LIBRARIES}
   PUBLIC
-  dmclock::dmclock)
+  dmclock::dmclock mongo::mongocxx_shared)
 
 if(WITH_RADOSGW_AMQP_ENDPOINT)
   target_link_libraries(rgw PRIVATE RabbitMQ::RabbitMQ)
@@ -368,7 +369,7 @@ target_link_libraries(rgw_admin_user PRIVATE
   ${CURL_LIBRARIES}
   ${EXPAT_LIBRARIES}
   ${OPENLDAP_LIBRARIES}
-  dmclock::dmclock)
+  dmclock::dmclock mongo::mongocxx_shared)
 set_target_properties(rgw_admin_user PROPERTIES OUTPUT_NAME rgw_admin_user VERSION 1.0.0
   SOVERSION 0)
 install(TARGETS rgw_admin_user DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -387,13 +388,13 @@ if(WITH_TESTS)
     rgw_jsonparser.cc)
   target_link_libraries(ceph_rgw_jsonparser
     ${rgw_libs}
-    global)
+    global mongo::mongocxx_shared)
 
   add_executable(ceph_rgw_multiparser
     rgw_multiparser.cc)
   target_link_libraries(ceph_rgw_multiparser
     ${rgw_libs}
-    global)
+    global mongo::mongocxx_shared)
 
   install(TARGETS
     ceph_rgw_jsonparser
