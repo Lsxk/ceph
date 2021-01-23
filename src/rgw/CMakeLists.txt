@@ -254,9 +254,6 @@ if(WITH_RADOSGW_BEAST_FRONTEND AND WITH_RADOSGW_BEAST_OPENSSL)
   target_link_libraries(radosgw_a PRIVATE OpenSSL::SSL)
 endif()
 
-list(APPEND CMAKE_PREFIX_PATH /usr/local/Cellar/mongo-cxx-driver/lib/cmake/mongocxx-3.6.2/)
-list(APPEND CMAKE_PREFIX_PATH /usr/local/Cellar/mongo-cxx-driver/lib/cmake/bsoncxx-3.6.2)
-
 find_package(mongocxx REQUIRED)
 
 add_executable(radosgw rgw_main.cc)
