@@ -24,5 +24,8 @@
 #ifndef unlikely
 #define unlikely(x)     __builtin_expect((x),0)
 #endif
+#ifndef expect_two
+#define expect_two(x, hint) __builtin_expect((x),(hint))
+#endif
 
 #endif

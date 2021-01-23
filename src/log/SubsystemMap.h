@@ -81,7 +81,7 @@ public:
     } else {
       // we expect that setting level different than the default
       // is rather unusual.
-      return expect(LvlV <= static_cast<int>(m_gather_levels[SubV]),
+      return expect_two(LvlV <= static_cast<int>(m_gather_levels[SubV]),
 		    LvlV <= ceph_subsys_get_max_default_level(SubV));
     }
   }
