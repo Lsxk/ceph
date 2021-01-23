@@ -48,14 +48,14 @@ int RGWSI_SysObj_Core::raw_stat(const rgw_raw_obj &obj, uint64_t *psize, real_ti
 
         string key = obj.oid;
 
-        bsoncxx::stdx::optional<bsoncxx::document::value> obj_mongo = mongo_client[coll_name].find_one({"key": key});
+/*        bsoncxx::stdx::optional<bsoncxx::document::value> obj_mongo = mongo_client["test"][coll_name].find_one({"key": key});
 
 
         if (obj_mongo) {
             std:cout << bsoncxx::to_json(*obj_mongo) << "\n";
         }
 
-        op.stat2(&size, &mtime_ts, nullptr);
+        op.stat2(&size, &mtime_ts, nullptr);*/
     }
     if (first_chunk) {
         // todo read first_chunk

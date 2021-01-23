@@ -107,7 +107,7 @@ class RGWSI_SysObj_Core : public RGWServiceInstance {
 protected:
     RGWSI_RADOS *rados_svc{nullptr};
     RGWSI_Zone *zone_svc{nullptr};
-    mongocxx::database mongo_client;
+    mongocxx::client mongo_client;
 
     struct GetObjState {
         RGWSI_RADOS::Obj rados_obj;
@@ -130,10 +130,10 @@ protected:
         mongo_client = init_mongo_client();
     }
 
-    static mongocxx::database init_mongo_client() {
+    static mongocxx::client init_mongo_client() {
         mongocxx::instance inst{};
         mongocxx::client conn{mongocxx::uri{bsoncxx::string::view_or_value{"mongodb://192.168.57.101:27017"}}};
-        return conn["test"];
+        return conn;
     }
 
 
